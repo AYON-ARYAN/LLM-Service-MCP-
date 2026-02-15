@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: ankane/pgvector
+    container_name: rag_postgres
+    environment:
+      POSTGRES_USER: ayon
+      POSTGRES_PASSWORD: ayon123
+      POSTGRES_DB: ragdb
+    ports:
+      - "5432:5432"
