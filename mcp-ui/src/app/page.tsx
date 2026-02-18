@@ -73,6 +73,22 @@ export default function Home() {
         setThinking("Complete");
       }
 
+      // Update any DOM elements if present (non-React fallback for quick debugging)
+      const responseEl = document.getElementById("responseText") as HTMLDivElement | null;
+      if (responseEl && data.finalAnswer) {
+        responseEl.innerText = data.finalAnswer;
+      }
+
+      const thoughtsEl = document.getElementById("thoughts") as HTMLDivElement | null;
+      if (thoughtsEl) {
+        thoughtsEl.innerHTML = `
+<b>🧠 Intent:</b> ${data.intent || ""}<br>
+<b>⚙ Tool:</b> ${data.tool || ""}<br>
+<b>📊 Reason:</b> ${data.reasoning || ""}<br>
+<b>📄 Context:</b> ${data.context || ""}
+`;
+      }
+
       let clean = answer
         .replace(/\\n/g, "\n")
         .replace(/\*\*/g, "")
@@ -214,6 +230,10 @@ export default function Home() {
           <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono flex-1 overflow-y-auto">
 {thinking}
 </pre>
+
+          <div id="responseText" className="mt-4 mb-2 text-sm text-white font-medium" />
+
+          <div id="thoughts" className="mb-4 text-sm text-gray-200" />
 
           <div className="mt-4 text-xs text-gray-400 pt-4 border-t border-white/10">
             Reasoning engine active • Memory active • RAG active

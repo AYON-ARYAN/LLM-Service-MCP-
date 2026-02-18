@@ -6,42 +6,104 @@ import org.springframework.stereotype.Service;
 public class AgentService {
 
     private final GroqService groqService;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final SerpService serpService;
 
-    public AgentService(GroqService groqService) {
+    public AgentService(GroqService groqService, SerpService serpService) {
         this.groqService = groqService;
-        this.objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        this.serpService = serpService;
+    }
+
+    public String searchInternet(String question) {
+        System.out.println("---- SERP SEARCH ----");
+
+        String googleData = serpService.searchGoogle(question);
+
+        System.out.println("SERP DATA:\n" + googleData);
+
+        String finalPrompt = "You are a highly capable AI assistant with access to real-time web search results.\n"
+                +
+                "Your goal is to answer the User's question accurately using ONLY the provided metadata.\n\n" +
+
+                "SEARCH RESULTS (SERP DATA):\n" + googleData + "\n\n" +
+
+                "INSTRUCTIONS:\n" +
+                "1. ANALYZE the search snippets carefully. Look for consensus among sources.\n" +
+                "2. If snippets provide conflicting data, MENTION the conflict and provide the range or options found.\n"
+                +
+                "3. USE YOUR REASONING to interpret the user's intent even if the query is imperfect (e.g., 'int' -> 'INR').\n"
+                +
+                "4. If exact details are missing, provide the best available info from the snippets and explain the limitation politely.\n"
+                +
+                "5. For fast-changing data, prefer the most recent snippets.\n" +
+                "6. Be helpful and direct. Avoid repeating 'I couldn't find specific details' unless truly nothing is relevant.\n\n"
+                +
+
+                "USER QUESTION: " + question;
+
+        return groqService.askGroq(finalPrompt);
     }
 
     public String decide(String question) {
         String prompt = """
-                You are a routing agent. logical reasoning agent
-                Classify the user's question into exactly one of these categories:
+                You are an AI routing brain.
 
-                1. SUMMARY: User wants a summary, overview, or explanation of the entire document.
-                2. RAG: User asks a specific question about the content of the document.
-                3. GENERAL: User asks a general question, greeting, or meta-question unrelated to the document content.
+                Decide BEST tool for the user query.
 
-                Reply ONLY with the category name (SUMMARY, RAG, or GENERAL). No other text.
+                TOOLS:
+                SEARCH -> realtime info (weather, news, current events, internet)
+                RAG -> question about uploaded document
+                SUMMARY -> summarize uploaded document
+                MEMORY -> question about previous chat
+                CHAT -> normal conversation
 
-                User question: "%s"
+                STRICT RULES:
+                - weather, news, current info -> SEARCH
+                - questions about document -> RAG
+                - "summarize" -> SUMMARY
+                - personal conversation -> CHAT
+                - previous conversation -> MEMORY
+
+                Return ONLY ONE WORD:
+                SEARCH or RAG or SUMMARY or CHAT or MEMORY
+
+                User Query: "%s"
                 """.formatted(question);
 
-        try {
-            String jsonResponse = groqService.askGroq(prompt);
-            com.fasterxml.jackson.databind.JsonNode rootNode = objectMapper.readTree(jsonResponse);
+        String decision = groqService.askGroq(prompt).trim().toUpperCase();
 
-            if (rootNode.has("choices") && rootNode.get("choices").isArray() && rootNode.get("choices").size() > 0) {
-                String content = rootNode.get("choices").get(0).get("message").get("content").asText().trim();
-                // Clean up any potential extra characters or markdown
-                return content.replaceAll("[^A-Z]", "");
-            }
-
-        } catch (Exception e) {
-            System.err.println("Agent decision error: " + e.getMessage());
+        if (!decision.equals("SEARCH") &&
+                !decision.equals("RAG") &&
+                !decision.equals("SUMMARY") &&
+                !decision.equals("MEMORY")) {
+            decision = "CHAT";
         }
 
-        // Fallback
-        return "RAG";
+        return decision;
+    }
+
+    public String contextualize(String history, String question) {
+        String prompt = """
+                Given the following conversation history and a new user question, rewrite the question to be a standalone query that contains all necessary context.
+                Resolving pronouns (it, he, she, they) is CRITICAL.
+
+                CHAT HISTORY:
+                %s
+
+                USER QUESTION:
+                %s
+
+                REWRITTEN QUESTION (return ONLY the question):
+                """
+                .formatted(history, question);
+
+        String rewritten = groqService.askGroq(prompt).trim();
+        // Fallback if LLM fails or returns empty
+        if (rewritten.isEmpty() || rewritten.length() < 5) {
+            return question;
+        }
+        // remove quotes if LLM adds them
+        rewritten = rewritten.replace("\"", "");
+        System.out.println("Wait ... Contextualizing Query: " + question + " -> " + rewritten);
+        return rewritten;
     }
 }

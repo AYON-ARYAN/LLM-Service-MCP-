@@ -78,8 +78,8 @@ public class ChunkService {
         // Sort descending by score
         scoredChunks.sort((a, b) -> Double.compare(b.score, a.score));
 
-        // Get top 5 (or fewer if not enough chunks)
-        int topK = Math.min(5, scoredChunks.size());
+        // Get top 10 (or fewer if not enough chunks)
+        int topK = Math.min(10, scoredChunks.size());
 
         StringBuilder context = new StringBuilder();
         context.append("Use this document context:\n\n");
