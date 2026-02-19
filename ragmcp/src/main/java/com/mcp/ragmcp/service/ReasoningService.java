@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 public class ReasoningService {
 
     public String buildReasoningPrompt(String context, String question) {
-
         return """
                 You are a highly intelligent and analytical research assistant.
 
@@ -32,5 +31,30 @@ public class ReasoningService {
                 Answer:
                 """
                 .formatted(context, question);
+    }
+
+    public String buildGodPrompt(String context, String history, String question) {
+        return """
+                You are a superintelligent AI.
+
+                Conversation:
+                """ + history + """
+
+                Document context:
+                """ + context + """
+
+                User question:
+                """ + question + """
+
+                Steps:
+                1. Understand conversation context
+                2. Understand user intent
+                3. If real-time info needed -> assume search data
+                4. Think step by step
+                5. Give final professional answer
+                6. If context missing -> answer using general knowledge.
+
+                Return only final answer.
+                """;
     }
 }

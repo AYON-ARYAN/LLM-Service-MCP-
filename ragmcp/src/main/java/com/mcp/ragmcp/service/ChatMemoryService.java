@@ -13,13 +13,16 @@ public class ChatMemoryService {
         chatHistory.add(role + ": " + message);
     }
 
-    public String getHistory() {
+    public String getFormattedHistory() {
+        return getFormattedHistory(10); // Default limit
+    }
+
+    public String getFormattedHistory(int limit) {
         StringBuilder sb = new StringBuilder();
-
-        for (String msg : chatHistory) {
-            sb.append(msg).append("\n");
+        int start = Math.max(0, chatHistory.size() - limit);
+        for (int i = start; i < chatHistory.size(); i++) {
+            sb.append(chatHistory.get(i)).append("\n");
         }
-
         return sb.toString();
     }
 

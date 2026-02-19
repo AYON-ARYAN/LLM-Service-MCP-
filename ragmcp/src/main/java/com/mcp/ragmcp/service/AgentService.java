@@ -44,6 +44,22 @@ public class AgentService {
     }
 
     public String decide(String question) {
+        String lowerQ = question.toLowerCase();
+
+        // 1. REGEX HEURISTICS
+        if (lowerQ.contains("weather") || lowerQ.contains("news") ||
+                lowerQ.contains("price") || lowerQ.contains("location") ||
+                lowerQ.contains("update") || lowerQ.contains("latest")) {
+            return "SEARCH";
+        }
+
+        // 2. CONTEXT AWARENESS (Pronouns)
+        // matches "it", "that", "he", "she", "they", "company", "bike" as whole words
+        if (lowerQ.matches(".*\\b(it|that|he|she|they|company|bike)\\b.*")) {
+            return "CONTEXT_CHAT";
+        }
+
+        // 3. LLM FALLBACK
         String prompt = """
                 You are an AI routing brain.
 
